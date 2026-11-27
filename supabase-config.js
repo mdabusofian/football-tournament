@@ -1,7 +1,4 @@
-// Daulatpur Cup 2026–27 — Supabase public browser configuration
-// Publishable key is safe for frontend use when Row Level Security (RLS) is enabled.
-// NEVER put a Supabase secret/service_role key in this file.
-window.DAULATPUR_SUPABASE = {
-  url: "https://kwisnrksmeiyeajvgujs.supabase.co",
-  anonKey: "sb_publishable_io_mo0jtCiKrPgSJ5kZbGg_ikQCw7iz"
-};
+// Paste your Supabase Project URL and anon/publishable key here.
+// This key is intended for browser use. NEVER put the service_role key here.
+window.DCL_SUPABASE_URL = "https://kwisnrksmeiyeajvgujs.supabase.co";
+window.DCL_SUPABASE_ANON_KEY = "sb_publishable_io_mo0jtCiKrPgSJ5kZbGg_ikQCw7iz";
