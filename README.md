@@ -1,41 +1,53 @@
-# Daulatpur Cup 2026–27 — HTML + JavaScript + Supabase
+# Daulatpur Champions League (DCL) — Website
 
-## Included
-- `index.html` — bilingual tournament frontend (English default).
-- `supabase-config.js` — configured with the supplied Supabase Project URL and publishable key.
-- `schema.sql` — database tables, starter fixtures, RLS policies and Realtime publication.
-- `vercel.json` — static Vercel deployment settings.
+This repository contains the public website, admin dashboard, team application page, and Supabase setup for Daulatpur Champions League 2026–27.
 
-## 1) Set up the database
-1. Open the Supabase project: https://supabase.com/dashboard/project/kwisnrksmeiyeajvgujs
-2. Go to SQL Editor → New query.
-3. Open `schema.sql`, copy its complete contents, paste into SQL Editor and click Run.
-4. Confirm the tables are created in Table Editor.
+## Files
+- `index.html` — public bilingual website (English default).
+- `admin.html` — administrator dashboard.
+- `registration.html` — public team application form.
+- `supabase-config.js` — Supabase project URL and browser-safe publishable/anon key.
+- `schema.sql` — additive DCL schema alignment and RLS policies.
+- `vercel.json` — Vercel rewrite for `/admin`.
 
-## 2) Create the first admin
-1. Supabase → Authentication → Users → Add user.
-2. Create the admin email and password.
-3. Copy that user's UUID.
-4. Run this in SQL Editor, replacing the UUID:
-   `insert into public.admin_users(user_id, role) values ('ADMIN-USER-UUID', 'owner');`
-5. Admin panel is at the bottom of the website. Sign in there.
+## Supabase configuration
+`supabase-config.js` must define:
+```js
+window.DCL_SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+window.DCL_SUPABASE_ANON_KEY = "YOUR_PUBLISHABLE_OR_ANON_KEY";
+```
+Only use the browser-safe publishable/anon key. Never put a `service_role` or secret key in this file.
 
-## 3) Add teams
-Use Supabase Table Editor → `teams` → Insert row. Add up to 32 teams. Assign team IDs to `matches.team_a_id` and `matches.team_b_id` after the public draw.
+## Existing DCL database
+The website uses the `dcl_` tables:
+`dcl_admins`, `dcl_teams`, `dcl_players`, `dcl_matches`, `dcl_match_events`, `dcl_team_applications`, `dcl_awards`, `dcl_news`, and `dcl_gallery`.
 
-## 4) Deploy to Vercel
-1. Upload these files to a GitHub repository: `index.html`, `supabase-config.js`, `vercel.json`.
-2. In https://vercel.com/new import the repository.
-3. Framework preset: Other. Build command: leave empty. Output directory: `.`.
-4. Deploy. Vercel will provide a `*.vercel.app` address.
+The `schema.sql` file is an additive alignment script. It does not drop or rename tables. Before running it on a live database, review it against the current table definitions and take a database backup. Do not run the old generic `teams` / `matches` schema from an earlier project version.
 
-## Security
-The browser file contains only the Supabase Project URL and publishable key. Never add a `sb_secret_...` or `service_role` key. RLS must remain enabled and tested before public launch.
+## Admin access
+1. Create the admin user in Supabase Authentication.
+2. Add that user's UUID to `public.dcl_admins` with the correct email:
+```sql
+insert into public.dcl_admins (user_id, email)
+select id, email
+from auth.users
+where email = 'mdabusofian842@gmail.com'
+on conflict (user_id) do update set email = excluded.email;
+```
+3. Open `/admin.html` and sign in with that Supabase Auth account.
 
-## Current implementation boundary
-- Public match/team data loads from Supabase.
-- Realtime subscriptions listen for changes to matches, teams and match events.
-- Admin email/password login is checked against `admin_users`.
-- Admin can update match status, score, minute and add goal/card events.
-- Share Match Card uses featured match data.
-- Dedicated team registration, team management, bracket advancement approval, draw audit workflow, notice editor and rich event timeline UI are not yet complete.
+## Public site
+- Teams, players, matches, awards, news, gallery, and match events load from their corresponding DCL tables.
+- A database status line in the Teams section reports connection and table errors instead of silently leaving sections empty.
+- The overview metrics update from the live database.
+- Player cards use the built-in football avatar; no player photo upload is required.
+- Team applications are submitted to `dcl_team_applications` and remain pending until approved by an administrator.
+
+## Deploy to Vercel
+1. Upload all files from this folder to the GitHub repository root.
+2. Confirm `supabase-config.js` contains the correct project URL and publishable/anon key.
+3. Import or redeploy the repository in Vercel (Framework Preset: Other; Build Command empty; Output Directory `.`).
+4. After deployment, hard-refresh the site with Ctrl+F5.
+
+## Important
+This package can be statically checked, but it cannot verify live Supabase permissions or the current data in your project. If the status line reports an error after deployment, share that exact message before changing database policies or table structures.
