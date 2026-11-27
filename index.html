@@ -104,7 +104,62 @@ function playerStats(p){const pe=events.filter(e=>e.player_id===p.id);return {go
 function openPlayerProfile(id){const p=players.find(x=>x.id===id);if(!p)return;const st=playerStats(p);document.getElementById('playerProfileContent').innerHTML=`<div class="kicker">DAULATPUR CHAMPIONS LEAGUE · PLAYER</div><div class="profile-top"><div class="profile-avatar">⚽</div><div><h3>${esc(p.player_name)}</h3><p>${esc(teamName(p.team_id))} · ${esc(p.position||'Player')}</p><div class="profile-number">#${p.jersey_number==null?'—':bn(p.jersey_number)}</div></div></div><div class="profile-stats"><div class="profile-stat"><b>${bn(st.appearances)}</b><small>MATCHES</small></div><div class="profile-stat"><b>${bn(st.goals)}</b><small>GOALS</small></div><div class="profile-stat"><b>${bn(st.assists)}</b><small>ASSISTS</small></div><div class="profile-stat"><b>${bn(st.yellow)}</b><small>YELLOW CARDS</small></div><div class="profile-stat"><b>${bn(st.red)}</b><small>RED CARDS</small></div><div class="profile-stat"><b>${bn(st.motm)}</b><small>MAN OF MATCH</small></div></div>${p.bio?`<p class="muted" style="margin-top:18px">${esc(p.bio)}</p>`:''}`;document.getElementById('playerProfileDialog').showModal()}
 function renderExtras(){document.getElementById('publicPlayers').innerHTML=players.filter(p=>p.is_published!==false).map(p=>{const st=playerStats(p);return `<article class="player-card" role="button" tabindex="0" data-player-id="${p.id}"><div class="player-avatar">⚽</div><div><b>${esc(p.player_name)}</b><small>${esc(teamName(p.team_id))} · ${esc(p.position||'Player')}</small><small>${lang==='en'?'Goals':'গোল'}: ${bn(st.goals)} · ${lang==='en'?'Apps':'ম্যাচ'}: ${bn(st.appearances)}</small></div><span class="player-number">${p.jersey_number==null?'—':'#'+bn(p.jersey_number)}</span></article>`}).join('')||'<p class="muted">Player profiles will be published here.</p>';document.querySelectorAll('[data-player-id]').forEach(el=>{el.addEventListener('click',()=>openPlayerProfile(el.dataset.playerId));el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openPlayerProfile(el.dataset.playerId)}})});document.getElementById('publicAwards').innerHTML=awards.map(a=>`<div class="info-card"><small>AWARD</small><b>${esc(a.award_name)}</b><span>${esc(a.recipient_name||'')}</span><p>${esc(a.description||'')}</p></div>`).join('');document.getElementById('publicGallery').innerHTML=gallery.map(g=>`<div class="public-card">${g.media_type==='video'?`<video controls src="${esc(g.media_url)}" style="width:100%;border-radius:9px"></video>`:`<img src="${esc(g.media_url)}" alt="${esc(g.title||'Tournament gallery')}">`}<h3>${esc(g.title||'Tournament moment')}</h3></div>`).join('')||'<p class="muted">Tournament photos will appear here.</p>';const newsNode=document.querySelector('#news');if(newsNode&&news.length){newsNode.innerHTML=`<div class="kicker">${lang==='en'?'NEWS & NOTICES':'সংবাদ ও নোটিশ'}</div>${news.map(n=>`<article><h3>${esc(n.title)}</h3><p>${esc(n.body||'')}</p></article>`).join('')}`}const statsNode=document.querySelector('#stats');if(statsNode){const completed=matches.filter(m=>m.status==='completed').length;const goals=matches.reduce((sum,m)=>sum+(Number(m.home_score)||0)+(Number(m.away_score)||0),0);const live=matches.filter(m=>m.status==='live'||m.status==='half_time').length;const tally={};events.filter(e=>e.event_type==='goal'&&e.player_id).forEach(e=>tally[e.player_id]=(tally[e.player_id]||0)+1);const top=Object.entries(tally).sort((a,b)=>b[1]-a[1])[0];const scorer=top?players.find(p=>p.id===top[0]):null;statsNode.innerHTML=`<div class="kicker">${lang==='en'?'STATISTICS':'পরিসংখ্যান'}</div><h3>${lang==='en'?'Tournament at a glance':'টুর্নামেন্ট পরিসংখ্যান'}</h3><p>${lang==='en'?'Completed matches':'সম্পন্ন ম্যাচ'}: <b>${bn(completed)}</b> · ${lang==='en'?'Total goals':'মোট গোল'}: <b>${bn(goals)}</b> · ${lang==='en'?'Live matches':'লাইভ ম্যাচ'}: <b>${bn(live)}</b></p><p>${lang==='en'?'Top scorer':'সর্বোচ্চ গোলদাতা'}: <b>${scorer?esc(scorer.player_name):'—'}</b>${top?' ('+bn(top[1])+' goals)':''}</p>`}}
 function render(){renderLive();renderFixtures('all');renderBracket();renderTeams();renderExtras()}
-async function loadData(){if(!db){document.getElementById('teamCaption').textContent='Database configuration unavailable';return}try{const [t,m,p,a,n,g,ev]=await Promise.all([db.from('dcl_teams').select('*').eq('is_published',true).order('sort_order'),db.from('dcl_matches').select('*').order('match_number'),db.from('dcl_players').select('*').order('player_name'),db.from('dcl_awards').select('*').order('created_at',{ascending:false}),db.from('dcl_news').select('*').eq('is_published',true).order('created_at',{ascending:false}),db.from('dcl_gallery').select('*').eq('is_published',true).order('created_at',{ascending:false}),db.from('dcl_match_events').select('*')]);for(const r of [t,m,p,a,n,g,ev])if(r.error)throw r.error;teams=t.data||[];matches=m.data||[];players=p.data||[];awards=a.data||[];news=n.data||[];gallery=g.data||[];events=ev.data||[];render()}catch(e){console.error('DCL data load:',e);document.getElementById('teamCaption').textContent='Unable to load tournament data. Please refresh.'}}
+async function loadData(){
+  const teamCaption=document.getElementById('teamCaption');
+  const playerBox=document.getElementById('publicPlayers');
+  if(!db){
+    teamCaption.textContent='Database configuration unavailable: check supabase-config.js';
+    playerBox.innerHTML='<p class="muted">Database connection is not configured. Check Supabase URL and anon key.</p>';
+    return;
+  }
+
+  // Load each table independently. One failed table must not block the others.
+  async function fetchTable(label, query, fallback=[]){
+    try{
+      const result=await query;
+      if(result.error) throw result.error;
+      return {data:result.data||[], error:null};
+    }catch(error){
+      console.error('DCL '+label+' load error:',error);
+      return {data:fallback, error};
+    }
+  }
+
+  const [t,m,p,a,n,g,ev]=await Promise.all([
+    fetchTable('teams',db.from('dcl_teams').select('*').eq('is_published',true).order('sort_order')),
+    fetchTable('matches',db.from('dcl_matches').select('*').order('match_number')),
+    fetchTable('players',db.from('dcl_players').select('*').order('player_name')),
+    fetchTable('awards',db.from('dcl_awards').select('*').order('created_at',{ascending:false})),
+    fetchTable('news',db.from('dcl_news').select('*').eq('is_published',true).order('created_at',{ascending:false})),
+    fetchTable('gallery',db.from('dcl_gallery').select('*').eq('is_published',true).order('created_at',{ascending:false})),
+    fetchTable('match events',db.from('dcl_match_events').select('*'))
+  ]);
+
+  teams=t.data;
+  matches=m.data;
+  players=p.data;
+  awards=a.data;
+  news=n.data;
+  gallery=g.data;
+  events=ev.data;
+
+  render();
+
+  // Show useful status instead of silently leaving sections blank.
+  if(t.error){
+    teamCaption.textContent='Teams could not load: '+t.error.message;
+  }
+  if(p.error){
+    playerBox.innerHTML='<p class="muted">Players could not load from Supabase: '+esc(p.error.message)+'. Check the dcl_players table, its read policy, and the player_name column.</p>';
+  }else if(players.length===0){
+    playerBox.innerHTML='<p class="muted">No player profiles have been added yet. Add players from the Admin Panel to show them here.</p>';
+  }else if(players.every(player=>player.is_published===false)){
+    playerBox.innerHTML='<p class="muted">Player records were found, but all are unpublished. Publish the players from the Admin Panel to display their profiles here.</p>';
+  }
+  if(ev.error){
+    console.warn('Player profiles loaded, but match event statistics are unavailable:',ev.error.message);
+  }
+}
 async function submitApplication(e){e.preventDefault();const msg=document.getElementById('applyMessage');if(!db){msg.textContent='Application service is unavailable.';return}const team_name=document.getElementById('applyTeamName').value.trim();if(!team_name)return;try{const {error}=await db.from('dcl_team_applications').insert({team_name,contact_name:document.getElementById('applyContact').value.trim()||null,phone:document.getElementById('applyPhone').value.trim()||null});if(error)throw error;msg.textContent=lang==='en'?'Application submitted. It will appear after admin review.':'আবেদন জমা হয়েছে। অ্যাডমিন পর্যালোচনার পর জানানো হবে।';e.target.reset()}catch(err){msg.textContent=err.message}}
 document.getElementById('publicApplicationForm').addEventListener('submit',submitApplication);
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));renderFixtures(b.dataset.tab)}));
