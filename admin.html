@@ -1,44 +1,300 @@
 <!doctype html>
-<html lang="bn">
+<html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Daulatpur Cup | Admin Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./supabase-config.js"></script>
-<style>
-:root{--bg:#07111f;--panel:#101f32;--panel2:#14263c;--line:#263b55;--text:#edf4ff;--muted:#9bb0c9;--lime:#b5f34a;--red:#ff6878;--blue:#64b5ff}*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#07111f,#0b1b2d 55%,#10243a);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:11px 15px;background:var(--lime);color:#14210a;font-weight:800}button.secondary{background:#243a54;color:var(--text);border:1px solid var(--line)}button.danger{background:#512632;color:#ffdce0;border:1px solid #82404d}button:disabled{opacity:.5;cursor:not-allowed}.wrap{max-width:1250px;margin:auto;padding:22px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}.brand{display:flex;gap:12px;align-items:center}.crest{width:48px;height:48px;border-radius:14px;background:var(--lime);color:#14210a;display:grid;place-items:center;font-size:24px;font-weight:900}.brand h1{font-size:20px;margin:0}.brand p{margin:2px 0;color:var(--muted);font-size:12px}.status{color:var(--muted);font-size:13px}.card{background:rgba(16,31,50,.96);border:1px solid var(--line);border-radius:17px;padding:19px;box-shadow:0 16px 40px #0002}.login{max-width:430px;margin:8vh auto}.login h2{margin:0 0 6px}.muted{color:var(--muted)}.field{display:flex;flex-direction:column;gap:6px;margin:12px 0}.field label{font-size:12px;color:var(--muted);font-weight:700}.field input,.field select,.field textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#091727;color:var(--text);outline:none}.field textarea{min-height:88px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--lime)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px}.stat strong{display:block;font-size:27px;color:var(--lime)}.stat span{color:var(--muted);font-size:12px}.tabs{display:flex;gap:8px;overflow:auto;margin:18px 0}.tabs button{white-space:nowrap;background:#172b43;color:#c7d7e9;border:1px solid var(--line)}.tabs button.active{background:var(--lime);color:#17220b;border-color:var(--lime)}.section{display:none}.section.active{display:block}.section h2{margin:0 0 4px;font-size:20px}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row .field{flex:1;min-width:150px}.tablewrap{overflow:auto;margin-top:14px}table{border-collapse:collapse;width:100%;min-width:720px}th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line);font-size:13px}th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}td input,td select{max-width:150px;padding:7px;border-radius:8px;border:1px solid var(--line);background:#091727;color:var(--text)}.pill{display:inline-block;border-radius:99px;padding:3px 9px;background:#263a50;color:#dbe9f8;font-size:11px}.pill.live{background:#5a202b;color:#ffd9df}.pill.approved{background:#1c4938;color:#c6ffe1}.pill.pending{background:#5a4720;color:#ffe7a7}.notice{padding:10px 12px;border-radius:10px;margin:12px 0;background:#142b42;color:#d7e8fa}.notice.error{background:#512632;color:#ffe0e3}.hidden{display:none!important}.actions{display:flex;gap:7px;flex-wrap:wrap}.hint{font-size:12px;color:var(--muted)}@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.wrap{padding:14px}.top{align-items:flex-start}.top .row{justify-content:flex-end}}@media(max-width:440px){.grid{grid-template-columns:1fr 1fr}.brand h1{font-size:16px}}
-</style></head>
-<body><div class="wrap">
-<header class="top"><div class="brand"><div class="crest">DC</div><div><h1>DAULATPUR CUP <span style="color:var(--lime)">2026–27</span></h1><p>OFFICIAL ADMINISTRATION DASHBOARD</p></div></div><div class="row"><a href="/" style="color:var(--lime);text-decoration:none;font-size:13px">← Public site</a><button id="logout" class="secondary hidden">Sign out</button></div></header>
-<div id="loginBox" class="card login"><h2>Admin Sign in</h2><p class="muted">শুধুমাত্র অনুমোদিত প্রশাসক প্রবেশ করতে পারবেন।</p><div class="field"><label>ADMIN EMAIL</label><input id="email" type="email" autocomplete="username" placeholder="admin@example.com"></div><div class="field"><label>PASSWORD</label><input id="password" type="password" autocomplete="current-password" placeholder="আপনার পাসওয়ার্ড"></div><button id="loginBtn" style="width:100%">Sign in to dashboard</button><div id="loginMsg" class="notice hidden"></div><p class="hint">পাসওয়ার্ড কারও সঙ্গে শেয়ার করবেন না।</p></div>
-<main id="dashboard" class="hidden"><div class="row" style="justify-content:space-between;margin-bottom:12px"><div><h2 style="margin:0">Tournament Control Center</h2><div class="status" id="welcome">Admin session active</div></div><div class="status" id="dbStatus">Connecting…</div></div>
-<div class="grid"><div class="card stat"><strong id="statTeams">0/32</strong><span>REGISTERED TEAMS</span></div><div class="card stat"><strong id="statMatches">31</strong><span>TOTAL MATCHES</span></div><div class="card stat"><strong id="statLive">0</strong><span>LIVE MATCHES</span></div><div class="card stat"><strong id="statPending">0</strong><span>PENDING APPLICATIONS</span></div></div>
-<nav class="tabs"><button class="active" data-tab="matches">Matches & Scores</button><button data-tab="teams">Teams</button><button data-tab="registrations">Applications</button><button data-tab="notices">Notices</button></nav>
-<section id="matches" class="section active card"><h2>Match Center</h2><p class="muted">ম্যাচের দল, স্কোর, মিনিট ও স্ট্যাটাস আপডেট করুন।</p><div class="tablewrap"><table><thead><tr><th>No.</th><th>Date</th><th>Team A</th><th>Score</th><th>Team B</th><th>Minute</th><th>Status</th><th>Save</th></tr></thead><tbody id="matchesBody"></tbody></table></div><h3>Add match event</h3><div class="row"><div class="field"><label>Match</label><select id="eventMatch"></select></div><div class="field"><label>Team</label><select id="eventTeam"></select></div><div class="field"><label>Event</label><select id="eventType"><option value="goal">Goal</option><option value="yellow_card">Yellow card</option><option value="red_card">Red card</option></select></div><div class="field"><label>Player</label><input id="eventPlayer" placeholder="Player name"></div><div class="field"><label>Minute</label><input id="eventMinute" type="number" min="0" max="150" value="0"></div><button id="addEvent" style="align-self:end;margin-bottom:12px">Add event</button></div><div id="matchMsg" class="notice hidden"></div></section>
-<section id="teams" class="section card"><h2>Team Management</h2><p class="muted">৩২টি দলের নাম, সংক্ষিপ্ত নাম ও ড্র পজিশন যোগ বা সম্পাদনা করুন।</p><div class="row"><div class="field"><label>TEAM NAME (ENGLISH)</label><input id="newTeamEn" placeholder="Team name"></div><div class="field"><label>TEAM NAME (BANGLA)</label><input id="newTeamBn" placeholder="দলের নাম"></div><div class="field"><label>SHORT NAME</label><input id="newTeamShort" placeholder="ABC"></div><div class="field"><label>DRAW POSITION (1–32)</label><input id="newTeamPos" type="number" min="1" max="32" placeholder="Optional"></div><button id="addTeam" style="align-self:end;margin-bottom:12px">Add team</button></div><div class="tablewrap"><table><thead><tr><th>ID</th><th>English name</th><th>বাংলা নাম</th><th>Short</th><th>Draw position</th><th>Action</th></tr></thead><tbody id="teamsBody"></tbody></table></div><div id="teamMsg" class="notice hidden"></div></section>
-<section id="registrations" class="section card"><h2>Team Applications</h2><p class="muted">অনলাইন নিবন্ধন যাচাই করে Approve বা Reject করুন।</p><div class="tablewrap"><table><thead><tr><th>Team</th><th>Manager</th><th>Phone</th><th>Email</th><th>Squad</th><th>Status</th><th>Action</th></tr></thead><tbody id="registrationsBody"></tbody></table></div><div id="regMsg" class="notice hidden"></div></section>
-<section id="notices" class="section card"><h2>News & Notices</h2><p class="muted">ওয়েবসাইটে ঘোষণা প্রকাশ করুন।</p><div class="row"><div class="field"><label>TITLE (ENGLISH)</label><input id="noticeEn" placeholder="Important announcement"></div><div class="field"><label>শিরোনাম (বাংলা)</label><input id="noticeBn" placeholder="ঘোষণার শিরোনাম"></div></div><div class="row"><div class="field"><label>BODY (ENGLISH)</label><textarea id="bodyEn"></textarea></div><div class="field"><label>বিস্তারিত (বাংলা)</label><textarea id="bodyBn"></textarea></div></div><label class="hint"><input id="publishNotice" type="checkbox"> Publish immediately</label><p><button id="addNotice">Save notice</button></p><div class="tablewrap"><table><thead><tr><th>Title</th><th>Published</th><th>Created</th></tr></thead><tbody id="noticesBody"></tbody></table></div><div id="noticeMsg" class="notice hidden"></div></section>
-</main></div>
-<script>
-const cfg=window.DAULATPUR_SUPABASE;let db=null,teams=[],matches=[];
-const $=id=>document.getElementById(id);const msg=(id,text,error=false)=>{const e=$(id);e.textContent=text;e.classList.remove('hidden','error');if(error)e.classList.add('error')};
-if(window.supabase&&cfg?.url&&cfg?.anonKey)db=window.supabase.createClient(cfg.url,cfg.anonKey);
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function verifyAdmin(){const {data:{user}}=await db.auth.getUser();if(!user)return false;const {data,error}=await db.from('admin_users').select('role').eq('user_id',user.id).maybeSingle();if(error)throw error;if(!data)return false;$('welcome').textContent=`Signed in: ${user.email} · Role: ${data.role}`;return true}
-async function enter(){ $('loginBox').classList.add('hidden');$('dashboard').classList.remove('hidden');$('logout').classList.remove('hidden');await refreshAll() }
-async function refreshAll(){ $('dbStatus').textContent='Syncing Supabase…';try{const [t,m,r,n]=await Promise.all([db.from('teams').select('*').order('id'),db.from('matches').select('*').order('match_no'),db.from('registrations').select('*').order('created_at',{ascending:false}),db.from('notices').select('*').order('created_at',{ascending:false})]);for(const x of [t,m,r,n])if(x.error)throw x.error;teams=t.data||[];matches=m.data||[];$('statTeams').textContent=`${teams.length}/32`;$('statMatches').textContent=matches.length;$('statLive').textContent=matches.filter(x=>x.status==='live'||x.status==='half_time').length;$('statPending').textContent=(r.data||[]).filter(x=>x.status==='pending').length;renderMatches();renderTeams();renderRegs(r.data||[]);renderNotices(n.data||[]);$('dbStatus').textContent='● Database connected'}catch(e){$('dbStatus').textContent='Database error';console.error(e);alert('ডেটা লোড হয়নি: '+e.message)}}
-function renderMatches(){const opts=matches.map(m=>`<option value="${m.match_no}">Match ${m.match_no}</option>`).join('');$('eventMatch').innerHTML=opts;$('matchesBody').innerHTML=matches.map(m=>`<tr><td>#${m.match_no}</td><td>${esc(m.match_date)}</td><td><select data-a="${m.match_no}"><option value="">TBD</option>${teams.map(t=>`<option value="${t.id}" ${m.team_a_id===t.id?'selected':''}>${esc(t.name_en)}</option>`).join('')}</select></td><td><input data-sa="${m.match_no}" type="number" min="0" value="${m.score_a}"> : <input data-sb="${m.match_no}" type="number" min="0" value="${m.score_b}"></td><td><select data-b="${m.match_no}"><option value="">TBD</option>${teams.map(t=>`<option value="${t.id}" ${m.team_b_id===t.id?'selected':''}>${esc(t.name_en)}</option>`).join('')}</select></td><td><input data-min="${m.match_no}" type="number" min="0" max="150" value="${m.minute}" style="width:65px"></td><td><select data-status="${m.match_no}">${['scheduled','live','half_time','full_time','postponed'].map(s=>`<option value="${s}" ${m.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}</select></td><td><button data-save="${m.match_no}">Save</button></td></tr>`).join('');$('eventTeam').innerHTML='<option value="">Select team</option>'+teams.map(t=>`<option value="${t.id}">${esc(t.name_en)}</option>`).join('')}
-function renderTeams(){$('teamsBody').innerHTML=teams.map(t=>`<tr><td>${t.id}</td><td><input data-ten="${t.id}" value="${esc(t.name_en)}"></td><td><input data-tbn="${t.id}" value="${esc(t.name_bn||'')}"></td><td><input data-ts="${t.id}" value="${esc(t.short_name||'')}" style="width:75px"></td><td><input data-tp="${t.id}" type="number" min="1" max="32" value="${t.draw_position??''}" style="width:75px"></td><td><button data-team-save="${t.id}">Save</button></td></tr>`).join('')}
-function renderRegs(rows){$('registrationsBody').innerHTML=rows.map(r=>`<tr><td>${esc(r.team_name)}</td><td>${esc(r.manager_name)}</td><td>${esc(r.phone)}</td><td>${esc(r.email||'—')}</td><td>${Array.isArray(r.squad)?r.squad.length+' players':'—'}</td><td><span class="pill ${r.status}">${r.status}</span></td><td>${r.status==='pending'?`<div class="actions"><button data-reg="${r.id}" data-value="approved">Approve</button><button class="danger" data-reg="${r.id}" data-value="rejected">Reject</button></div>`:'—'}</td></tr>`).join('')||'<tr><td colspan="7">No applications yet.</td></tr>'}
-function renderNotices(rows){$('noticesBody').innerHTML=rows.map(n=>`<tr><td>${esc(n.title_en)} / ${esc(n.title_bn||'')}</td><td>${n.is_published?'Yes':'Draft'}</td><td>${new Date(n.created_at).toLocaleDateString()}</td></tr>`).join('')||'<tr><td colspan="3">No notices yet.</td></tr>'}
-$('loginBtn').onclick=async()=>{if(!db)return msg('loginMsg','Supabase config পাওয়া যায়নি।',true);$('loginBtn').disabled=true;try{const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;if(!await verifyAdmin()){await db.auth.signOut();throw new Error('এই ইমেইল admin_users টেবিলে অনুমোদিত নয়।')}await enter()}catch(e){msg('loginMsg',e.message,true)}finally{$('loginBtn').disabled=false}};
-$('logout').onclick=async()=>{await db.auth.signOut();location.reload()};
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab))});
-$('matchesBody').addEventListener('click',async e=>{const b=e.target.closest('[data-save]');if(!b)return;const n=+b.dataset.save;const val=s=>$( 'matchesBody').querySelector(`[data-${s}="${n}"]`).value;const payload={team_a_id:val('a')?+val('a'):null,team_b_id:val('b')?+val('b'):null,score_a:+val('sa'),score_b:+val('sb'),minute:+val('min'),status:val('status'),updated_at:new Date().toISOString()};b.disabled=true;const {error}=await db.from('matches').update(payload).eq('match_no',n);b.disabled=false;if(error)msg('matchMsg',error.message,true);else{msg('matchMsg',`Match ${n} updated.`);await refreshAll()}});
-$('addEvent').onclick=async()=>{const n=+$('eventMatch').value,team=+$('eventTeam').value||null;const {error}=await db.from('match_events').insert({match_no:n,team_id:team,event_type:$('eventType').value,player_name:$('eventPlayer').value.trim()||null,minute:+$('eventMinute').value});if(error)msg('matchMsg',error.message,true);else{msg('matchMsg','Match event added.');$('eventPlayer').value=''}};
-$('addTeam').onclick=async()=>{const name=$('newTeamEn').value.trim();if(!name)return msg('teamMsg','English team name is required.',true);const pos=$('newTeamPos').value;const {error}=await db.from('teams').insert({name_en:name,name_bn:$('newTeamBn').value.trim()||null,short_name:$('newTeamShort').value.trim()||null,draw_position:pos?+pos:null});if(error)msg('teamMsg',error.message,true);else{msg('teamMsg','Team added.');['newTeamEn','newTeamBn','newTeamShort','newTeamPos'].forEach(id=>$(id).value='');await refreshAll()}};
-$('teamsBody').addEventListener('click',async e=>{const b=e.target.closest('[data-team-save]');if(!b)return;const id=+b.dataset.teamSave;const q=s=>$('teamsBody').querySelector(`[data-${s}="${id}"]`).value;const p=q('tp');const {error}=await db.from('teams').update({name_en:q('ten').trim(),name_bn:q('tbn').trim()||null,short_name:q('ts').trim()||null,draw_position:p?+p:null,updated_at:new Date().toISOString()}).eq('id',id);if(error)msg('teamMsg',error.message,true);else{msg('teamMsg','Team updated.');await refreshAll()}});
-$('registrationsBody').addEventListener('click',async e=>{const b=e.target.closest('[data-reg]');if(!b)return;const {error}=await db.from('registrations').update({status:b.dataset.value}).eq('id',b.dataset.reg);if(error)msg('regMsg',error.message,true);else{msg('regMsg','Application '+b.dataset.value+'.');await refreshAll()}});
-$('addNotice').onclick=async()=>{const title=$('noticeEn').value.trim();if(!title)return msg('noticeMsg','English title is required.',true);const pub=$('publishNotice').checked;const {error}=await db.from('notices').insert({title_en:title,title_bn:$('noticeBn').value.trim()||null,body_en:$('bodyEn').value.trim()||null,body_bn:$('bodyBn').value.trim()||null,is_published:pub,published_at:pub?new Date().toISOString():null});if(error)msg('noticeMsg',error.message,true);else{msg('noticeMsg','Notice saved.');await refreshAll()}};
-(async()=>{if(!db){msg('loginMsg','Supabase config বা SDK পাওয়া যায়নি।',true);return}try{const {data:{session}}=await db.auth.getSession();if(session&&await verifyAdmin())await enter()}catch(e){console.warn(e)}db.auth.onAuthStateChange(async(_event,session)=>{if(!session){$('dashboard').classList.add('hidden');$('loginBox').classList.remove('hidden');$('logout').classList.add('hidden')}})})();
-</script></body></html>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>Admin Dashboard | Daulatpur Champion League</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+*{box-sizing:border-box} :root{--bg:#07111f;--panel:#101d2d;--panel2:#142338;--line:#24364b;--text:#f2f6fb;--muted:#91a2b7;--lime:#c7f36b;--blue:#6db5ff;--red:#ff7777}body{margin:0;background:var(--bg);color:var(--text);font-family:"DM Sans","Hind Siliguri",sans-serif;font-size:14px}body.bn{font-family:"Hind Siliguri","DM Sans",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}.muted{color:var(--muted);line-height:1.65}.eyebrow{font-size:10px;letter-spacing:1.7px;font-weight:800;color:#8ea4bc;margin:0 0 8px}.brand-mark{width:58px;height:58px;display:grid;place-items:center;border-radius:17px;background:linear-gradient(135deg,var(--lime),#7cbf37);color:#10200a;font-weight:900;font-size:19px;letter-spacing:-1px;margin:0 auto 18px;box-shadow:0 10px 35px #b6eb4a22}.brand-mark.small{width:42px;height:42px;border-radius:12px;margin:0;font-size:14px}.login-shell{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,#18314c 0,transparent 55%),var(--bg)}.login-card{width:min(100%,420px);padding:38px;border:1px solid var(--line);border-radius:24px;background:#0d1a2a;box-shadow:0 25px 90px #0006}.login-card h1{text-align:center;font-size:29px;margin:0 0 7px}.login-card>.muted{text-align:center;margin:0 0 28px}.login-card form{display:grid;gap:10px}.login-card label,.form-grid label,.panel>label{color:#c2cfdd;font-size:12px;font-weight:700}.login-card input,.form-grid input,.form-grid select,.form-grid textarea,.panel select,.event-form input,.event-form select,.modal input,.modal select{width:100%;margin-top:7px;border:1px solid var(--line);border-radius:10px;background:#091523;color:var(--text);padding:12px 13px;outline:none;min-width:0}.login-card input:focus,.form-grid input:focus,.form-grid select:focus,.panel select:focus,.event-form input:focus{border-color:var(--blue)}.login-card label:not(:first-child){margin-top:8px}.btn{border:1px solid transparent;border-radius:10px;padding:11px 15px;font-weight:800;transition:.2s}.btn.primary{background:var(--lime);color:#14200b}.btn.primary:hover{filter:brightness(1.07);transform:translateY(-1px)}.btn.secondary{background:#1a2b40;border-color:#2a4058;color:#dce8f5}.btn.full{width:100%;margin-top:12px}.message{font-size:12px;min-height:18px;color:var(--blue)}.login-foot{display:flex;justify-content:center;gap:8px;color:#71859d;font-size:10px;margin-top:28px;flex-wrap:wrap}.app-shell{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:248px;background:#091625;border-right:1px solid var(--line);padding:25px 16px;display:flex;flex-direction:column;z-index:5}.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--text);padding:0 5px 31px}.brand b{display:block;font-size:13px;letter-spacing:1px}.brand small{display:block;color:#8398b0;font-size:9px;letter-spacing:1.5px;margin-top:3px}.side-label{font-size:9px;color:#647b95;letter-spacing:1.8px;font-weight:800;padding:0 12px 10px}.sidebar nav{display:grid;gap:5px}.nav-item{display:flex;align-items:center;gap:13px;text-align:left;padding:12px;border:0;border-radius:10px;color:#9fb0c4;background:transparent;font-weight:700}.nav-item>span:first-child{width:18px;text-align:center;font-size:17px}.nav-item:hover,.nav-item.active{background:#17283c;color:var(--lime)}.count-badge{margin-left:auto;background:#344a60;color:#fff;border-radius:20px;padding:2px 7px;font-size:10px}.sidebar-bottom{margin-top:auto}.admin-chip{display:flex;align-items:center;gap:10px;padding:14px 7px;border-top:1px solid var(--line)}.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#243d54;color:var(--lime);font-weight:900}.admin-chip b,.admin-chip small{display:block;max-width:155px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-chip b{font-size:11px}.admin-chip small{color:var(--muted);font-size:10px;margin-top:3px}.signout{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:transparent;color:#9eb0c3}.main-area{margin-left:248px;padding:0 34px 24px;max-width:1600px}.topbar{height:88px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;margin-bottom:29px}.topbar .eyebrow{margin:0 0 5px}.topbar h1{font-size:22px;margin:0}.top-actions{display:flex;align-items:center;gap:17px}.site-link{color:#b9cbe0;text-decoration:none;font-weight:700;font-size:12px}.lang-switch{border:1px solid var(--line);background:#0d1a2a;border-radius:9px;padding:3px;display:flex}.lang-switch button{border:0;border-radius:6px;background:transparent;color:#9cafc3;padding:7px 10px;font-size:11px;font-weight:800}.lang-switch button.selected{background:#263b50;color:var(--lime)}.welcome-row,.section-toolbar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:22px}.welcome-row h2,.section-toolbar h2{font-size:23px;margin:0 0 5px}.welcome-row .muted,.section-toolbar .muted{margin:0}.season-pill,.status-pill{border:1px solid #49622d;background:#19291a;color:var(--lime);border-radius:30px;padding:8px 12px;font-size:9px;font-weight:900;letter-spacing:1px;white-space:nowrap}.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}.stat-card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px}.stat-card{padding:19px}.stat-card>span{display:block;color:#9eb0c4;font-size:11px;font-weight:700}.stat-card strong{display:block;font-size:31px;margin:9px 0 4px;letter-spacing:-1px}.stat-card small{color:#71869e;font-size:10px}.live-stat strong{color:var(--lime)}.content-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:17px}.panel{padding:20px;margin-bottom:17px;min-width:0}.panel h3{font-size:15px;margin:0 0 17px}.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.panel-head h3{margin:0}.panel-head .eyebrow{margin-bottom:5px}.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.quick-action{display:flex;flex-direction:column;align-items:flex-start;gap:13px;background:#14263a;border:1px solid #263b52;border-radius:11px;padding:14px;color:#d9e5f1;text-align:left;font-size:11px;font-weight:700}.quick-action b{font-size:21px;color:var(--lime)}.text-btn{border:0;background:transparent;color:var(--lime);font-size:11px;font-weight:800}.connection-good{color:var(--lime)}.connection-bad{color:var(--red)}.section-toolbar{margin-top:8px}.table-wrap{width:100%;overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:600px}th{text-align:left;color:#8499b1;font-size:10px;text-transform:uppercase;letter-spacing:1px;font-weight:800;padding:12px;border-bottom:1px solid var(--line)}td{padding:13px 12px;border-bottom:1px solid #203147;color:#d4dfeb;font-size:12px}tr:last-child td{border-bottom:0}.table-actions{display:flex;gap:6px}.mini-btn{border:1px solid #30465d;border-radius:7px;background:#17283b;color:#dce7f2;padding:6px 9px;font-size:10px;font-weight:700}.mini-btn.danger{color:#ff9999}.tag{display:inline-block;border-radius:20px;padding:4px 8px;background:#26384d;color:#c8d8e8;font-size:9px;font-weight:800}.tag.live,.tag.approved{background:#20331c;color:var(--lime)}.tag.pending{background:#3b321d;color:#ffd77a}.tag.rejected{background:#3b2227;color:#ff9b9b}.empty{padding:22px;text-align:center;color:var(--muted);font-size:12px}.live-layout{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px}.live-match-info{padding-top:17px;min-height:80px}.form-grid{display:grid;gap:13px;align-content:start}.form-grid h3{margin-bottom:3px}.form-grid label{display:block}.form-grid .btn{justify-self:start}.event-panel{margin-top:0}.event-form{display:grid;grid-template-columns:1fr 1fr 1.2fr .6fr 1.4fr auto;gap:8px;margin:15px 0}.event-form input,.event-form select{margin:0;padding:10px;font-size:11px}.event-list-item{padding:10px 0;border-bottom:1px solid var(--line);font-size:12px;color:#b9c9d9}.event-list-item:last-child{border:0}.footer{text-align:center;color:#52677f;font-size:9px;letter-spacing:1.5px;padding:24px}.footer span{padding:0 7px;color:#8ca5bc}.modal{width:min(94vw,540px);border:1px solid var(--line);border-radius:17px;background:#101d2d;color:var(--text);padding:22px;box-shadow:0 25px 100px #0009}.modal::backdrop{background:#020811bb;backdrop-filter:blur(4px)}.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.modal-head h3{margin:0}.icon-btn{border:0;background:transparent;color:#b6c6d8;font-size:24px}.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}.toast{position:fixed;right:25px;bottom:25px;padding:12px 16px;background:#d5f68a;color:#14200b;border-radius:10px;font-weight:800;font-size:12px;box-shadow:0 10px 35px #0006;opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none;z-index:20}.toast.show{opacity:1;transform:translateY(0)}@media(max-width:1050px){.sidebar{width:205px}.main-area{margin-left:205px;padding:0 22px 20px}.stats-grid{grid-template-columns:repeat(2,1fr)}.event-form{grid-template-columns:repeat(3,1fr)}}@media(max-width:720px){.sidebar{position:static;width:auto;height:auto;padding:12px;display:block;border-right:0;border-bottom:1px solid var(--line)}.brand{padding:0 3px 12px}.side-label,.sidebar-bottom{display:none}.sidebar nav{display:flex;overflow-x:auto}.nav-item{white-space:nowrap;padding:9px}.nav-item>span:first-child{display:none}.main-area{margin:0;padding:0 13px 18px}.topbar{height:auto;padding:17px 0;align-items:flex-start}.topbar h1{font-size:18px}.top-actions{gap:8px;flex-direction:column-reverse;align-items:flex-end}.site-link{font-size:10px}.welcome-row h2,.section-toolbar h2{font-size:19px}.stats-grid{gap:8px}.stat-card{padding:13px}.stat-card strong{font-size:25px}.content-grid,.live-layout{grid-template-columns:1fr}.quick-grid{grid-template-columns:repeat(2,1fr)}.section-toolbar{align-items:flex-start}.event-form{grid-template-columns:1fr 1fr}.panel{padding:15px}.season-pill{font-size:8px}.footer{font-size:8px}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Keep your existing supabase-config.js in the same project folder. -->
+  <script src="supabase-config.js"></script>
+</head>
+<body>
+  <div id="loginView" class="login-shell">
+    <div class="login-card">
+      <div class="brand-mark">DCL</div>
+      <p class="eyebrow">DAULATPUR CHAMPION LEAGUE</p>
+      <h1 data-i18n="adminLogin">Admin Login</h1>
+      <p class="muted" data-i18n="loginHint">Sign in with your authorized administrator account.</p>
+      <form id="loginForm">
+        <label for="email" data-i18n="email">Email address</label>
+        <input id="email" type="email" autocomplete="username" value="mdabusofian842@gmail.com" required>
+        <label for="password" data-i18n="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button class="btn primary full" type="submit" data-i18n="signIn">Sign in</button>
+      </form>
+      <p id="loginMessage" class="message" role="status"></p>
+      <div class="login-foot"><span>2026–2027</span><span>•</span><span>All Night Olympic Football Tournament</span></div>
+    </div>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <a class="brand" href="./"><span class="brand-mark small">DCL</span><span><b>DAULATPUR</b><small>CHAMPION LEAGUE</small></span></a>
+      <div class="side-label" data-i18n="workspace">WORKSPACE</div>
+      <nav id="sideNav">
+        <button class="nav-item active" data-page="overview"><span>▦</span><span data-i18n="overview">Overview</span></button>
+        <button class="nav-item" data-page="teams"><span>♧</span><span data-i18n="teams">Teams</span></button>
+        <button class="nav-item" data-page="matches"><span>◷</span><span data-i18n="matches">Matches</span></button>
+        <button class="nav-item" data-page="live"><span>●</span><span data-i18n="liveControl">Live control</span></button>
+        <button class="nav-item" data-page="applications"><span>▤</span><span data-i18n="applications">Applications</span><i id="pendingBadge" class="count-badge">0</i></button>
+        <button class="nav-item" data-page="content"><span>✦</span><span data-i18n="content">Awards & News</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="admin-chip"><span class="avatar">A</span><span><b id="adminEmail">Admin</b><small data-i18n="administrator">Administrator</small></span></div>
+        <button id="signOutBtn" class="signout" data-i18n="signOut">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div><div class="eyebrow">DCL / <span id="crumb">OVERVIEW</span></div><h1 id="pageTitle">Overview</h1></div>
+        <div class="top-actions">
+          <a class="site-link" href="./" target="_blank" rel="noopener">↗ <span data-i18n="viewWebsite">View website</span></a>
+          <div class="lang-switch" aria-label="Language"><button id="langEN" class="selected">EN</button><button id="langBN">বাংলা</button></div>
+        </div>
+      </header>
+
+      <section id="overviewPage" class="page">
+        <div class="welcome-row"><div><p class="eyebrow" data-i18n="controlCenter">TOURNAMENT CONTROL CENTER</p><h2 data-i18n="welcome">Welcome back, Admin</h2><p class="muted" data-i18n="welcomeSub">Manage the league from one place.</p></div><span class="season-pill">SEASON 2026–27</span></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span data-i18n="registeredTeams">Registered teams</span><strong id="statTeams">—</strong><small data-i18n="teamsInLeague">Teams in the league</small></article>
+          <article class="stat-card"><span data-i18n="totalMatches">Total matches</span><strong id="statMatches">—</strong><small data-i18n="knockoutMatches">Knockout fixtures</small></article>
+          <article class="stat-card"><span data-i18n="pendingApps">Pending applications</span><strong id="statApps">—</strong><small data-i18n="awaitingReview">Awaiting review</small></article>
+          <article class="stat-card live-stat"><span data-i18n="liveNow">Live now</span><strong id="statLive">—</strong><small data-i18n="activeMatches">Active matches</small></article>
+        </div>
+        <div class="content-grid">
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow" data-i18n="quickActions">QUICK ACTIONS</p><h3 data-i18n="manageLeague">Manage your league</h3></div></div><div class="quick-grid">
+            <button class="quick-action" data-goto="teams"><b>＋</b><span data-i18n="addTeam">Add a team</span></button>
+            <button class="quick-action" data-goto="matches"><b>＋</b><span data-i18n="createFixture">Create fixture</span></button>
+            <button class="quick-action" data-goto="live"><b>●</b><span data-i18n="updateScore">Update live score</span></button>
+            <button class="quick-action" data-goto="applications"><b>✓</b><span data-i18n="reviewApps">Review applications</span></button>
+          </div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow" data-i18n="systemStatus">SYSTEM STATUS</p><h3 data-i18n="connection">Database connection</h3></div><span id="connectionPill" class="status-pill">Checking…</span></div><p class="muted" id="connectionText" data-i18n="checkingDatabase">Checking Supabase connection…</p><button id="refreshBtn" class="btn secondary" data-i18n="refreshData">Refresh data</button></article>
+        </div>
+        <article class="panel"><div class="panel-head"><div><p class="eyebrow" data-i18n="latestActivity">LATEST ACTIVITY</p><h3 data-i18n="recentApplications">Recent team applications</h3></div><button class="text-btn" data-goto="applications" data-i18n="viewAll">View all →</button></div><div id="recentApps" class="table-wrap"><p class="muted">—</p></div></article>
+      </section>
+
+      <section id="teamsPage" class="page hidden">
+        <div class="section-toolbar"><div><h2 data-i18n="teamDirectory">Team directory</h2><p class="muted" data-i18n="teamDirectorySub">Add and maintain tournament teams.</p></div><button id="addTeamBtn" class="btn primary">＋ <span data-i18n="addTeam">Add a team</span></button></div>
+        <div class="panel"><div class="table-wrap" id="teamsTable"></div></div>
+      </section>
+
+      <section id="matchesPage" class="page hidden">
+        <div class="section-toolbar"><div><h2 data-i18n="fixturesResults">Fixtures & results</h2><p class="muted" data-i18n="fixturesSub">Schedule matches and publish final results.</p></div><button id="addMatchBtn" class="btn primary">＋ <span data-i18n="createFixture">Create fixture</span></button></div>
+        <div class="panel"><div class="table-wrap" id="matchesTable"></div></div>
+      </section>
+
+      <section id="livePage" class="page hidden">
+        <div class="section-toolbar"><div><h2 data-i18n="liveMatchControl">Live match control</h2><p class="muted" data-i18n="liveSub">Manually update the score, match minute and status.</p></div><button id="loadLiveBtn" class="btn secondary" data-i18n="refreshData">Refresh data</button></div>
+        <div class="live-layout"><div class="panel"><label data-i18n="selectMatch">Select match</label><select id="liveMatchSelect"><option value="">—</option></select><div id="liveMatchInfo" class="live-match-info muted">Select a match to manage its live status.</div></div>
+          <form id="liveForm" class="panel form-grid"><h3 data-i18n="scoreboardUpdate">Scoreboard update</h3>
+            <label data-i18n="homeScore">Team A score<input id="liveScoreA" type="number" min="0" value="0"></label>
+            <label data-i18n="awayScore">Team B score<input id="liveScoreB" type="number" min="0" value="0"></label>
+            <label data-i18n="matchMinute">Match minute<input id="liveMinute" type="number" min="0" max="150" placeholder="e.g. 35"></label>
+            <label data-i18n="matchStatus">Match status<select id="liveStatus"><option value="upcoming">Upcoming</option><option value="live">Live</option><option value="half_time">Half-time</option><option value="completed">Completed</option><option value="postponed">Postponed</option></select></label>
+            <button class="btn primary full" type="submit" data-i18n="saveLiveUpdate">Save live update</button><p id="liveMessage" class="message"></p>
+          </form></div>
+        <div class="panel event-panel"><h3 data-i18n="matchEvents">Match events</h3><form id="eventForm" class="event-form"><select id="eventType"><option value="goal">Goal</option><option value="yellow_card">Yellow card</option><option value="red_card">Red card</option><option value="substitution">Substitution</option></select><select id="eventTeam"><option value="">Team</option></select><input id="eventPlayer" placeholder="Player name"><input id="eventMinute" type="number" min="0" placeholder="Minute"><input id="eventDescription" placeholder="Details (optional)"><button class="btn secondary" type="submit" data-i18n="addEvent">Add event</button></form><div id="eventsList"></div><p id="eventMessage" class="message"></p></div>
+      </section>
+
+      <section id="applicationsPage" class="page hidden">
+        <div class="section-toolbar"><div><h2 data-i18n="teamApplications">Team applications</h2><p class="muted" data-i18n="applicationsSub">Review public requests to enter the tournament.</p></div><button id="refreshAppsBtn" class="btn secondary" data-i18n="refreshData">Refresh data</button></div>
+        <div class="panel"><div class="table-wrap" id="applicationsTable"></div></div>
+      </section>
+
+      <section id="contentPage" class="page hidden">
+        <div class="section-toolbar"><div><h2 data-i18n="awardsNews">Awards & news</h2><p class="muted" data-i18n="contentSub">Publish tournament awards and announcements.</p></div></div>
+        <div class="content-grid">
+          <form id="awardForm" class="panel form-grid"><h3 data-i18n="addAward">Add an award</h3><label data-i18n="awardTitle">Award title<input id="awardTitle" required placeholder="Player of the Match"></label><label data-i18n="winnerName">Winner / recipient<input id="awardWinner" required></label><label data-i18n="awardDetails">Details<input id="awardDetails"></label><button class="btn primary" type="submit" data-i18n="publishAward">Publish award</button><p id="awardMessage" class="message"></p></form>
+          <form id="newsForm" class="panel form-grid"><h3 data-i18n="publishNews">Publish news</h3><label data-i18n="newsTitle">News title<input id="newsTitle" required></label><label data-i18n="newsBody">News text<textarea id="newsBody" rows="4" required></textarea></label><button class="btn primary" type="submit" data-i18n="publishNews">Publish news</button><p id="newsMessage" class="message"></p></form>
+        </div>
+        <div class="content-grid"><article class="panel"><h3 data-i18n="publishedAwards">Published awards</h3><div id="awardsList"></div></article><article class="panel"><h3 data-i18n="publishedNews">Published news</h3><div id="newsList"></div></article></div>
+      </section>
+      <footer class="footer">DAULATPUR CHAMPION LEAGUE <span>•</span> ADMIN CONSOLE <span>•</span> 2026–2027</footer>
+    </main>
+  </div>
+
+  <dialog id="editDialog" class="modal"><form id="editForm" method="dialog"><div class="modal-head"><h3 id="dialogTitle">Edit</h3><button class="icon-btn" value="cancel" aria-label="Close">×</button></div><div id="dialogFields" class="form-grid"></div><div class="modal-actions"><button class="btn secondary" value="cancel" data-i18n="cancel">Cancel</button><button id="dialogSave" class="btn primary" value="default" data-i18n="save">Save</button></div><p id="dialogMessage" class="message"></p></form></dialog>
+  <div id="toast" class="toast" role="status"></div>
+  <script>
+(() => {
+  "use strict";
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => [...document.querySelectorAll(s)];
+  const translations = {
+    en: {
+      adminLogin:"Admin Login",loginHint:"Sign in with your authorized administrator account.",email:"Email address",password:"Password",signIn:"Sign in",workspace:"WORKSPACE",overview:"Overview",teams:"Teams",matches:"Matches",liveControl:"Live control",applications:"Applications",content:"Awards & News",administrator:"Administrator",signOut:"Sign out",viewWebsite:"View website",controlCenter:"TOURNAMENT CONTROL CENTER",welcome:"Welcome back, Admin",welcomeSub:"Manage the league from one place.",registeredTeams:"Registered teams",teamsInLeague:"Teams in the league",totalMatches:"Total matches",knockoutMatches:"Knockout fixtures",pendingApps:"Pending applications",awaitingReview:"Awaiting review",liveNow:"Live now",activeMatches:"Active matches",quickActions:"QUICK ACTIONS",manageLeague:"Manage your league",addTeam:"Add a team",createFixture:"Create fixture",updateScore:"Update live score",reviewApps:"Review applications",systemStatus:"SYSTEM STATUS",connection:"Database connection",checkingDatabase:"Checking Supabase connection…",refreshData:"Refresh data",latestActivity:"LATEST ACTIVITY",recentApplications:"Recent team applications",viewAll:"View all →",teamDirectory:"Team directory",teamDirectorySub:"Add and maintain tournament teams.",fixturesResults:"Fixtures & results",fixturesSub:"Schedule matches and publish final results.",liveMatchControl:"Live match control",liveSub:"Manually update the score, match minute and status.",selectMatch:"Select match",scoreboardUpdate:"Scoreboard update",homeScore:"Team A score",awayScore:"Team B score",matchMinute:"Match minute",matchStatus:"Match status",saveLiveUpdate:"Save live update",matchEvents:"Match events",addEvent:"Add event",teamApplications:"Team applications",applicationsSub:"Review public requests to enter the tournament.",awardsNews:"Awards & news",contentSub:"Publish tournament awards and announcements.",addAward:"Add an award",awardTitle:"Award title",winnerName:"Winner / recipient",awardDetails:"Details",publishAward:"Publish award",publishNews:"Publish news",newsTitle:"News title",newsBody:"News text",publishedAwards:"Published awards",publishedNews:"Published news",cancel:"Cancel",save:"Save"
+    },
+    bn: {
+      adminLogin:"অ্যাডমিন লগইন",loginHint:"অনুমোদিত অ্যাডমিন অ্যাকাউন্ট দিয়ে প্রবেশ করুন।",email:"ইমেইল ঠিকানা",password:"পাসওয়ার্ড",signIn:"লগইন করুন",workspace:"কন্ট্রোল প্যানেল",overview:"ড্যাশবোর্ড",teams:"দলসমূহ",matches:"ম্যাচসমূহ",liveControl:"লাইভ কন্ট্রোল",applications:"দলের আবেদন",content:"পুরস্কার ও সংবাদ",administrator:"অ্যাডমিনিস্ট্রেটর",signOut:"লগআউট",viewWebsite:"ওয়েবসাইট দেখুন",controlCenter:"টুর্নামেন্ট কন্ট্রোল সেন্টার",welcome:"স্বাগতম, অ্যাডমিন",welcomeSub:"এক জায়গা থেকেই পুরো লীগ পরিচালনা করুন।",registeredTeams:"নিবন্ধিত দল",teamsInLeague:"টুর্নামেন্টের মোট দল",totalMatches:"মোট ম্যাচ",knockoutMatches:"নকআউট ফিক্সচার",pendingApps:"অপেক্ষমাণ আবেদন",awaitingReview:"পর্যালোচনার অপেক্ষায়",liveNow:"লাইভ ম্যাচ",activeMatches:"চলমান ম্যাচ",quickActions:"দ্রুত কাজ",manageLeague:"টুর্নামেন্ট পরিচালনা",addTeam:"নতুন দল যোগ করুন",createFixture:"ফিক্সচার তৈরি",updateScore:"লাইভ স্কোর আপডেট",reviewApps:"আবেদন পর্যালোচনা",systemStatus:"সিস্টেম অবস্থা",connection:"ডেটাবেজ সংযোগ",checkingDatabase:"Supabase সংযোগ পরীক্ষা হচ্ছে…",refreshData:"রিফ্রেশ",latestActivity:"সাম্প্রতিক কার্যক্রম",recentApplications:"সাম্প্রতিক দলের আবেদন",viewAll:"সব দেখুন →",teamDirectory:"দলের তালিকা",teamDirectorySub:"টুর্নামেন্টের দল যোগ ও পরিচালনা করুন।",fixturesResults:"ফিক্সচার ও ফলাফল",fixturesSub:"ম্যাচের সময়সূচি তৈরি ও ফলাফল প্রকাশ করুন।",liveMatchControl:"লাইভ ম্যাচ কন্ট্রোল",liveSub:"স্কোর, ম্যাচ মিনিট ও অবস্থা আপডেট করুন।",selectMatch:"ম্যাচ নির্বাচন",scoreboardUpdate:"স্কোরবোর্ড আপডেট",homeScore:"দল A-এর গোল",awayScore:"দল B-এর গোল",matchMinute:"ম্যাচের মিনিট",matchStatus:"ম্যাচের অবস্থা",saveLiveUpdate:"লাইভ আপডেট সংরক্ষণ",matchEvents:"ম্যাচ ইভেন্ট",addEvent:"ইভেন্ট যোগ করুন",teamApplications:"দলের আবেদনসমূহ",applicationsSub:"টুর্নামেন্টে অংশগ্রহণের আবেদন পর্যালোচনা করুন।",awardsNews:"পুরস্কার ও সংবাদ",contentSub:"টুর্নামেন্টের পুরস্কার ও ঘোষণা প্রকাশ করুন।",addAward:"পুরস্কার যোগ করুন",awardTitle:"পুরস্কারের নাম",winnerName:"বিজয়ী / প্রাপক",awardDetails:"বিস্তারিত",publishAward:"পুরস্কার প্রকাশ",publishNews:"সংবাদ প্রকাশ",newsTitle:"সংবাদের শিরোনাম",newsBody:"সংবাদের বিবরণ",publishedAwards:"প্রকাশিত পুরস্কার",publishedNews:"প্রকাশিত সংবাদ",cancel:"বাতিল",save:"সংরক্ষণ"
+    }
+  };
+  let lang = localStorage.getItem("dcl-admin-lang") || "en";
+  let client = null, currentUser = null, teams = [], matches = [], applications = [], selectedMatch = null;
+
+  function tr(key){ return (translations[lang] && translations[lang][key]) || translations.en[key] || key; }
+  function applyLanguage(){
+    document.documentElement.lang = lang === "bn" ? "bn" : "en";
+    document.body.classList.toggle("bn", lang === "bn");
+    $$("[data-i18n]").forEach(el => { const key=el.dataset.i18n; if(translations[lang][key]) el.textContent=translations[lang][key]; });
+    $("#langEN").classList.toggle("selected",lang==="en"); $("#langBN").classList.toggle("selected",lang==="bn");
+    const active = $(".nav-item.active"); if(active) setPage(active.dataset.page,false);
+  }
+  function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"),2600); }
+  function setMessage(el,msg,error=false){ if(!el)return;el.textContent=msg;el.style.color=error?"#ff9292":"#9fd4ff"; }
+  function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+  function getConfig(){
+    const w=window;
+    let url=w.DCL_SUPABASE_URL||w.SUPABASE_URL||w.supabaseUrl||w.supabase_url;
+    let key=w.DCL_SUPABASE_ANON_KEY||w.SUPABASE_ANON_KEY||w.supabaseAnonKey||w.supabaseKey||w.anonKey;
+    try{ if(!url && typeof SUPABASE_URL!=="undefined") url=SUPABASE_URL; }catch(_){}
+    try{ if(!key && typeof SUPABASE_ANON_KEY!=="undefined") key=SUPABASE_ANON_KEY; }catch(_){}
+    try{ if(!key && typeof supabaseKey!=="undefined") key=supabaseKey; }catch(_){}
+    return {url,key};
+  }
+  function initClient(){
+    const cfg=getConfig();
+    if(!cfg.url||!cfg.key){ throw new Error("Supabase config not found. Ensure supabase-config.js exposes SUPABASE_URL and SUPABASE_ANON_KEY (or window.DCL_SUPABASE_URL / window.DCL_SUPABASE_ANON_KEY).");}
+    if(!window.supabase?.createClient) throw new Error("Supabase JS library did not load.");
+    client=window.supabase.createClient(cfg.url,cfg.key);
+    window.dclAdminClient=client;
+  }
+  async function verifyAdmin(user){
+    const {data,error}=await client.from("dcl_admins").select("user_id,email").eq("user_id",user.id).maybeSingle();
+    if(error) throw error;
+    if(!data) throw new Error("Admin access denied. This account is not listed in dcl_admins.");
+    return data;
+  }
+  async function showApp(user){
+    currentUser=user; $("#loginView").classList.add("hidden"); $("#appView").classList.remove("hidden"); $("#adminEmail").textContent=user.email||"Admin";
+    await verifyAdmin(user);
+    await refreshAll();
+    setupRealtime();
+  }
+  async function restoreSession(){
+    try{initClient();}catch(e){setMessage($("#loginMessage"),e.message,true);return;}
+    const {data,error}=await client.auth.getSession();
+    if(error){setMessage($("#loginMessage"),error.message,true);return;}
+    if(data.session){try{await showApp(data.session.user);}catch(e){await client.auth.signOut();$("#appView").classList.add("hidden");$("#loginView").classList.remove("hidden");setMessage($("#loginMessage"),e.message,true);}}
+  }
+  $("#loginForm").addEventListener("submit",async e=>{
+    e.preventDefault();setMessage($("#loginMessage"),"");
+    try{if(!client)initClient();const {data,error}=await client.auth.signInWithPassword({email:$("#email").value.trim(),password:$("#password").value});if(error)throw error;await showApp(data.user);}
+    catch(err){setMessage($("#loginMessage"),err.message,true);}
+  });
+  $("#signOutBtn").addEventListener("click",async()=>{if(client)await client.auth.signOut();currentUser=null;$("#appView").classList.add("hidden");$("#loginView").classList.remove("hidden");$("#password").value="";});
+  $("#langEN").addEventListener("click",()=>{lang="en";localStorage.setItem("dcl-admin-lang",lang);applyLanguage();});
+  $("#langBN").addEventListener("click",()=>{lang="bn";localStorage.setItem("dcl-admin-lang",lang);applyLanguage();});
+  function setPage(page,scroll=true){
+    $$(".page").forEach(p=>p.classList.add("hidden"));const target=$("#"+page+"Page");if(target)target.classList.remove("hidden");
+    $$(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.page===page));
+    const titleMap={overview:"overview",teams:"teams",matches:"matches",live:"liveControl",applications:"applications",content:"content"};
+    $("#pageTitle").textContent=tr(titleMap[page]||"overview");$("#crumb").textContent=page.toUpperCase();
+    if(scroll)window.scrollTo({top:0,behavior:"smooth"});
+    if(page==="live")renderLiveSelector(); if(page==="applications")renderApplications(); if(page==="teams")renderTeams();if(page==="matches")renderMatches();if(page==="content")loadContent();
+  }
+  $("#sideNav").addEventListener("click",e=>{const b=e.target.closest("[data-page]");if(b)setPage(b.dataset.page);});
+  document.addEventListener("click",e=>{const b=e.target.closest("[data-goto]");if(b)setPage(b.dataset.goto);});
+  async function safeQuery(table,select="*"){const {data,error}=await client.from(table).select(select);if(error)throw error;return data||[];}
+  async function refreshAll(){
+    try{
+      [teams,matches,applications]=await Promise.all([safeQuery("dcl_teams"),safeQuery("dcl_matches"),safeQuery("dcl_team_applications")]);
+      $("#statTeams").textContent=teams.length;$("#statMatches").textContent=matches.length;
+      const pending=applications.filter(a=>(a.status||"pending")==="pending").length;
+      $("#statApps").textContent=pending;$("#pendingBadge").textContent=pending;
+      $("#statLive").textContent=matches.filter(m=>m.status==="live").length;
+      $("#connectionPill").textContent="CONNECTED";$("#connectionPill").className="status-pill connection-good";
+      $("#connectionText").textContent="Supabase is connected. Data access is available for this administrator.";
+      renderTeams();renderMatches();renderApplications();renderRecentApps();renderLiveSelector();loadContent();
+    }catch(e){$("#connectionPill").textContent="ERROR";$("#connectionPill").className="status-pill connection-bad";$("#connectionText").textContent=e.message;toast(e.message);}
+  }
+  function setupRealtime(){
+    client.channel("dcl-admin-refresh").on("postgres_changes",{event:"*",schema:"public",table:"dcl_matches"},refreshAll).on("postgres_changes",{event:"*",schema:"public",table:"dcl_teams"},refreshAll).on("postgres_changes",{event:"*",schema:"public",table:"dcl_team_applications"},refreshAll).subscribe();
+  }
+  $("#refreshBtn").addEventListener("click",refreshAll);$("#refreshAppsBtn").addEventListener("click",refreshAll);$("#loadLiveBtn").addEventListener("click",refreshAll);
+  function teamName(id){const t=teams.find(x=>String(x.id)===String(id));return t?.name||"TBD";}
+  function statusTag(s){const st=s||"pending";return `<span class="tag ${escapeHtml(st)}">${escapeHtml(st.replace("_"," "))}</span>`;}
+  function renderTeams(){
+    const el=$("#teamsTable");if(!teams.length){el.innerHTML=`<div class="empty">No teams found. Add the first team.</div>`;return;}
+    el.innerHTML=`<table><thead><tr><th>Team</th><th>Short name</th><th>Created</th><th>Actions</th></tr></thead><tbody>${teams.map(t=>`<tr><td><b>${escapeHtml(t.name)}</b></td><td>${escapeHtml(t.short_name||"—")}</td><td>${t.created_at?new Date(t.created_at).toLocaleDateString():"—"}</td><td><div class="table-actions"><button class="mini-btn" data-edit-team="${escapeHtml(t.id)}">Edit</button><button class="mini-btn danger" data-delete-team="${escapeHtml(t.id)}">Delete</button></div></td></tr>`).join("")}</tbody></table>`;
+  }
+  function renderMatches(){
+    const el=$("#matchesTable");if(!matches.length){el.innerHTML=`<div class="empty">No fixtures yet. Create the first match.</div>`;return;}
+    el.innerHTML=`<table><thead><tr><th>Match</th><th>Round</th><th>Date / time</th><th>Score</th><th>Status</th><th>Actions</th></tr></thead><tbody>${matches.map(m=>`<tr><td><b>${escapeHtml(teamName(m.team_a_id))} vs ${escapeHtml(teamName(m.team_b_id))}</b></td><td>${escapeHtml(m.round||"—")}</td><td>${escapeHtml(m.match_date||"—")} ${escapeHtml(m.match_time||"")}</td><td>${m.score_a??0} – ${m.score_b??0}</td><td>${statusTag(m.status)}</td><td><div class="table-actions"><button class="mini-btn" data-edit-match="${escapeHtml(m.id)}">Edit</button><button class="mini-btn danger" data-delete-match="${escapeHtml(m.id)}">Delete</button></div></td></tr>`).join("")}</tbody></table>`;
+  }
+  function renderApplications(){
+    const el=$("#applicationsTable");if(!applications.length){el.innerHTML=`<div class="empty">No applications received yet.</div>`;return;}
+    el.innerHTML=`<table><thead><tr><th>Team name</th><th>Contact</th><th>Phone</th><th>Submitted</th><th>Status</th><th>Review</th></tr></thead><tbody>${applications.map(a=>`<tr><td><b>${escapeHtml(a.team_name||"—")}</b></td><td>${escapeHtml(a.contact_name||"—")}</td><td>${escapeHtml(a.phone||"—")}</td><td>${a.created_at?new Date(a.created_at).toLocaleDateString():"—"}</td><td>${statusTag(a.status)}</td><td><div class="table-actions"><button class="mini-btn" data-app-status="${escapeHtml(a.id)}" data-status="approved">Approve</button><button class="mini-btn danger" data-app-status="${escapeHtml(a.id)}" data-status="rejected">Reject</button></div></td></tr>`).join("")}</tbody></table>`;
+  }
+  function renderRecentApps(){const el=$("#recentApps");const rows=[...applications].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,5);if(!rows.length){el.innerHTML='<div class="empty">No applications yet.</div>';return;}el.innerHTML=`<table><thead><tr><th>Team</th><th>Date</th><th>Status</th></tr></thead><tbody>${rows.map(a=>`<tr><td>${escapeHtml(a.team_name||"—")}</td><td>${a.created_at?new Date(a.created_at).toLocaleDateString():"—"}</td><td>${statusTag(a.status)}</td></tr>`).join("")}</tbody></table>`;}
+  function renderLiveSelector(){
+    const sel=$("#liveMatchSelect");const old=sel.value;sel.innerHTML='<option value="">Select a match…</option>'+matches.map(m=>`<option value="${escapeHtml(m.id)}">${escapeHtml(teamName(m.team_a_id))} vs ${escapeHtml(teamName(m.team_b_id))} · ${escapeHtml(m.round||"")}</option>`).join("");
+    if(matches.some(m=>String(m.id)===old))sel.value=old;
+    if(sel.value)loadSelectedMatch();
+  }
+  $("#liveMatchSelect").addEventListener("change",loadSelectedMatch);
+  function loadSelectedMatch(){
+    selectedMatch=matches.find(m=>String(m.id)===$("#liveMatchSelect").value)||null;
+    if(!selectedMatch){$("#liveMatchInfo").textContent="Select a match to manage its live status.";return;}
+    $("#liveMatchInfo").innerHTML=`<b>${escapeHtml(teamName(selectedMatch.team_a_id))} vs ${escapeHtml(teamName(selectedMatch.team_b_id))}</b><p>${escapeHtml(selectedMatch.round||"")} · ${escapeHtml(selectedMatch.match_date||"")} ${escapeHtml(selectedMatch.match_time||"")}</p>`;
+    $("#liveScoreA").value=selectedMatch.score_a??0;$("#liveScoreB").value=selectedMatch.score_b??0;$("#liveMinute").value=selectedMatch.minute??"";$("#liveStatus").value=selectedMatch.status||"upcoming";
+    $("#eventTeam").innerHTML='<option value="">Team</option>'+[selectedMatch.team_a_id,selectedMatch.team_b_id].filter(Boolean).map(id=>`<option value="${escapeHtml(id)}">${escapeHtml(teamName(id))}</option>`).join("");
+    loadEvents();
+  }
+  $("#liveForm").addEventListener("submit",async e=>{
+    e.preventDefault();if(!selectedMatch){setMessage($("#liveMessage"),"Select a match first.",true);return;}
+    const payload={score_a:Number($("#liveScoreA").value||0),score_b:Number($("#liveScoreB").value||0),minute:$("#liveMinute").value===""?null:Number($("#liveMinute").value),status:$("#liveStatus").value};
+    try{const {error}=await client.from("dcl_matches").update(payload).eq("id",selectedMatch.id);if(error)throw error;setMessage($("#liveMessage"),"Match updated successfully.");toast("Live score saved");await refreshAll();}
+    catch(err){setMessage($("#liveMessage"),err.message,true);}
+  });
+  async function loadEvents(){
+    $("#eventsList").innerHTML="";if(!selectedMatch)return;
+    try{const {data,error}=await client.from("dcl_match_events").select("*").eq("match_id",selectedMatch.id).order("created_at",{ascending:false});if(error)throw error;
+      $("#eventsList").innerHTML=(data||[]).map(ev=>`<div class="event-list-item"><b>${escapeHtml(ev.event_type||"event")}</b> · ${escapeHtml(ev.player_name||"")} ${ev.minute!=null?`(${ev.minute}')`:""} — ${escapeHtml(ev.description||"")}</div>`).join("")||'<div class="empty">No match events.</div>';
+    }catch(e){$("#eventsList").innerHTML=`<div class="empty">Events unavailable: ${escapeHtml(e.message)}</div>`;}
+  }
+  $("#eventForm").addEventListener("submit",async e=>{
+    e.preventDefault();if(!selectedMatch){setMessage($("#eventMessage"),"Select a match first.",true);return;}
+    const payload={match_id:selectedMatch.id,event_type:$("#eventType").value,team_id:$("#eventTeam").value||null,player_name:$("#eventPlayer").value.trim()||null,minute:$("#eventMinute").value===""?null:Number($("#eventMinute").value),description:$("#eventDescription").value.trim()||null};
+    try{const {error}=await client.from("dcl_match_events").insert(payload);if(error)throw error;$("#eventForm").reset();await loadEvents();setMessage($("#eventMessage"),"Event added.");}
+    catch(err){setMessage($("#eventMessage"),err.message,true);}
+  });
+  function openDialog(title,fields,onSave){
+    $("#dialogTitle").textContent=title;$("#dialogMessage").textContent="";
+    $("#dialogFields").innerHTML=fields.map(f=>`<label>${escapeHtml(f.label)}${f.type==="select"?`<select name="${escapeHtml(f.name)}">${f.options.map(o=>`<option value="${escapeHtml(o.value)}" ${String(o.value)===String(f.value)?"selected":""}>${escapeHtml(o.label)}</option>`).join("")}</select>`:`<input name="${escapeHtml(f.name)}" type="${f.type||"text"}" value="${escapeHtml(f.value??"")}" ${f.required?"required":""} ${f.min!==undefined?`min="${f.min}"`:""}>`}</label>`).join("");
+    const dlg=$("#editDialog");dlg.showModal();
+    $("#dialogSave").onclick=async ev=>{ev.preventDefault();const data=Object.fromEntries(new FormData($("#editForm")).entries());try{await onSave(data);dlg.close();await refreshAll();toast("Saved successfully");}catch(err){setMessage($("#dialogMessage"),err.message,true);}};
+  }
+  $("#addTeamBtn").addEventListener("click",()=>openDialog("Add team",[{name:"name",label:"Team name",required:true},{name:"short_name",label:"Short name"}],async d=>{const {error}=await client.from("dcl_teams").insert({name:d.name.trim(),short_name:d.short_name.trim()||null});if(error)throw error;}));
+  $("#addMatchBtn").addEventListener("click",()=>openDialog("Create fixture",[
+    {name:"round",label:"Round",value:"Round of 32"},{name:"match_number",label:"Match number",type:"number",value:1,min:1},
+    {name:"team_a_id",label:"Team A",type:"select",options:[{value:"",label:"TBD"},...teams.map(t=>({value:t.id,label:t.name}))]},
+    {name:"team_b_id",label:"Team B",type:"select",options:[{value:"",label:"TBD"},...teams.map(t=>({value:t.id,label:t.name}))]},
+    {name:"match_date",label:"Date",type:"date"},{name:"match_time",label:"Time",type:"time",value:"20:00"}
+  ],async d=>{const {error}=await client.from("dcl_matches").insert({round:d.round,match_number:Number(d.match_number),team_a_id:d.team_a_id||null,team_b_id:d.team_b_id||null,match_date:d.match_date||null,match_time:d.match_time||null,status:"upcoming",score_a:0,score_b:0});if(error)throw error;}));
+  document.addEventListener("click",async e=>{
+    const te=e.target.closest("[data-edit-team]");if(te){const t=teams.find(x=>String(x.id)===te.dataset.editTeam);if(!t)return;openDialog("Edit team",[{name:"name",label:"Team name",value:t.name,required:true},{name:"short_name",label:"Short name",value:t.short_name}],async d=>{const {error}=await client.from("dcl_teams").update({name:d.name.trim(),short_name:d.short_name.trim()||null}).eq("id",t.id);if(error)throw error;});}
+    const td=e.target.closest("[data-delete-team]");if(td&&confirm("Delete this team?")){const {error}=await client.from("dcl_teams").delete().eq("id",td.dataset.deleteTeam);if(error)toast(error.message);else{toast("Team deleted");refreshAll();}}
+    const me=e.target.closest("[data-edit-match]");if(me){const m=matches.find(x=>String(x.id)===me.dataset.editMatch);if(!m)return;openDialog("Edit match",[{name:"round",label:"Round",value:m.round},{name:"match_number",label:"Match number",type:"number",value:m.match_number||1},{name:"match_date",label:"Date",type:"date",value:m.match_date},{name:"match_time",label:"Time",type:"time",value:m.match_time},{name:"status",label:"Status",type:"select",value:m.status||"upcoming",options:["upcoming","live","half_time","completed","postponed"].map(x=>({value:x,label:x}))}],async d=>{const {error}=await client.from("dcl_matches").update({round:d.round,match_number:Number(d.match_number),match_date:d.match_date||null,match_time:d.match_time||null,status:d.status}).eq("id",m.id);if(error)throw error;});}
+    const md=e.target.closest("[data-delete-match]");if(md&&confirm("Delete this match?")){const {error}=await client.from("dcl_matches").delete().eq("id",md.dataset.deleteMatch);if(error)toast(error.message);else{toast("Match deleted");refreshAll();}}
+    const ap=e.target.closest("[data-app-status]");if(ap){const {error}=await client.from("dcl_team_applications").update({status:ap.dataset.status}).eq("id",ap.dataset.appStatus);if(error)toast(error.message);else{toast("Application updated");refreshAll();}}
+  });
+  async function loadContent(){
+    if(!client)return;
+    try{const [aw,ne]=await Promise.all([safeQuery("dcl_awards"),safeQuery("dcl_news")]);$("#awardsList").innerHTML=aw.map(a=>`<p class="event-list-item"><b>${escapeHtml(a.title||"Award")}</b> — ${escapeHtml(a.winner_name||a.recipient||"")}</p>`).join("")||'<div class="empty">No awards published.</div>';$("#newsList").innerHTML=ne.map(n=>`<p class="event-list-item"><b>${escapeHtml(n.title||"")}</b><br>${escapeHtml(n.body||n.content||"")}</p>`).join("")||'<div class="empty">No news published.</div>';}catch(e){$("#awardsList").innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`;}
+  }
+  $("#awardForm").addEventListener("submit",async e=>{e.preventDefault();try{const {error}=await client.from("dcl_awards").insert({title:$("#awardTitle").value.trim(),winner_name:$("#awardWinner").value.trim(),details:$("#awardDetails").value.trim()||null});if(error)throw error;e.target.reset();setMessage($("#awardMessage"),"Award published.");loadContent();}catch(err){setMessage($("#awardMessage"),err.message,true);}});
+  $("#newsForm").addEventListener("submit",async e=>{e.preventDefault();try{const {error}=await client.from("dcl_news").insert({title:$("#newsTitle").value.trim(),body:$("#newsBody").value.trim()});if(error)throw error;e.target.reset();setMessage($("#newsMessage"),"News published.");loadContent();}catch(err){setMessage($("#newsMessage"),err.message,true);}});
+  applyLanguage();
+  restoreSession();
+})();
+  </script>
+</body>
+</html>
