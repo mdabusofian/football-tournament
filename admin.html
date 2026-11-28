@@ -239,6 +239,16 @@
   $("#refreshBtn").addEventListener("click",refreshAll);$("#refreshAppsBtn").addEventListener("click",refreshAll);$("#loadLiveBtn").addEventListener("click",refreshAll);
   function teamDisplayName(t){return t?.name_en||t?.name_bn||"Unnamed team";}
   function teamName(id){const t=teams.find(x=>String(x.id)===String(id));return t?teamDisplayName(t):"TBD";}
+  async function uploadPlayerPhoto(file, prefix="player"){
+    if(!file) return null;
+    if(!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error("ছবি JPG, PNG অথবা WEBP হতে হবে।");
+    if(file.size>5*1024*1024) throw new Error("ছবির আকার ৫ MB-এর কম হতে হবে।");
+    const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"");
+    const path=`${prefix}/${crypto.randomUUID()}.${ext}`;
+    const {error}=await client.storage.from("dcl-player-photos").upload(path,file,{contentType:file.type,upsert:false});
+    if(error) throw error;
+    return client.storage.from("dcl-player-photos").getPublicUrl(path).data.publicUrl;
+  }
   function statusTag(s){const st=s||"pending";return `<span class="tag ${escapeHtml(st)}">${escapeHtml(st.replace("_"," "))}</span>`;}
   async function loadPlayerSubmissions(){
     const el=$("#playerSubmissionsList");
@@ -254,7 +264,7 @@
       el.innerHTML=playerSubmissions.map(s=>{
         const team=teams.find(t=>String(t.id)===String(s.team_id));
         const roster=Array.isArray(s.players)?s.players:[];
-        const names=roster.map(p=>`<li>${escapeHtml(p.player_name||"—")} ${p.jersey_number!==null&&p.jersey_number!==""?`<small>#${escapeHtml(p.jersey_number)}</small>`:""} <small>· ${escapeHtml(p.position||"Position not selected")}</small></li>`).join("");
+        const names=roster.map(p=>`<li style="display:flex;align-items:center;gap:9px;margin:7px 0">${p.photo_url?`<img src="${escapeHtml(p.photo_url)}" style="width:42px;height:42px;object-fit:cover;border-radius:50%;border:1px solid #526b83">`:`<span style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#203650">⚽</span>`}<span>${escapeHtml(p.player_name||"—")} ${p.jersey_number!==null&&p.jersey_number!==""?`<small>#${escapeHtml(p.jersey_number)}</small>`:""} <small>· ${escapeHtml(p.position||"Position not selected")}</small></span></li>`).join("");
         const pending=(s.status||"pending")==="pending";
         return `<article class="event-list-item" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><b>${escapeHtml(team?teamDisplayName(team):"Unknown team")}</b>${statusTag(s.status)}</div><p style="margin:8px 0">Captain: <b>${escapeHtml(s.captain_name||"—")}</b> · Phone: ${escapeHtml(s.phone||"—")}</p><p class="muted" style="margin:4px 0">Submitted: ${s.created_at?new Date(s.created_at).toLocaleString():"—"}</p><ol style="line-height:1.8;padding-left:22px">${names}</ol>${s.contact_note?`<p>Note: ${escapeHtml(s.contact_note)}</p>`:""}${pending?`<div class="table-actions"><button class="mini-btn" data-approve-player-submission="${escapeHtml(s.id)}">Approve & publish players</button><button class="mini-btn danger" data-reject-player-submission="${escapeHtml(s.id)}">Reject</button></div>`:""}</article>`;
       }).join("");
@@ -310,7 +320,7 @@
   });
   function openDialog(title,fields,onSave){
     $("#dialogTitle").textContent=title;$("#dialogMessage").textContent="";
-    $("#dialogFields").innerHTML=fields.map(f=>`<label>${escapeHtml(f.label)}${f.type==="select"?`<select name="${escapeHtml(f.name)}">${f.options.map(o=>`<option value="${escapeHtml(o.value)}" ${String(o.value)===String(f.value)?"selected":""}>${escapeHtml(o.label)}</option>`).join("")}</select>`:`<input name="${escapeHtml(f.name)}" type="${f.type||"text"}" value="${escapeHtml(f.value??"")}" ${f.required?"required":""} ${f.min!==undefined?`min="${f.min}"`:""}>`}</label>`).join("");
+    $("#dialogFields").innerHTML=fields.map(f=>`<label>${escapeHtml(f.label)}${f.type==="select"?`<select name="${escapeHtml(f.name)}">${f.options.map(o=>`<option value="${escapeHtml(o.value)}" ${String(o.value)===String(f.value)?"selected":""}>${escapeHtml(o.label)}</option>`).join("")}</select>`:f.type==="file"?`<input name="${escapeHtml(f.name)}" type="file" accept="image/jpeg,image/png,image/webp"><small style="display:block;color:#91a2b7;margin-top:5px">JPG, PNG বা WEBP • সর্বোচ্চ ৫ MB ${f.value?"• বর্তমান ছবি আছে":"• ঐচ্ছিক"}</small>`:`<input name="${escapeHtml(f.name)}" type="${f.type||"text"}" value="${escapeHtml(f.value??"")}" ${f.required?"required":""} ${f.min!==undefined?`min="${f.min}"`:""}>`}</label>`).join("");
     const dlg=$("#editDialog");dlg.showModal();
     $("#dialogSave").onclick=async ev=>{ev.preventDefault();const data=Object.fromEntries(new FormData($("#editForm")).entries());try{await onSave(data);dlg.close();await refreshAll();toast("Saved successfully");}catch(err){setMessage($("#dialogMessage"),err.message,true);}};
   }
@@ -335,8 +345,8 @@
           {name:"appearances",label:"Appearances",type:"number",value:p.appearances||0,min:0},
           {name:"assists",label:"Assists",type:"number",value:p.assists||0,min:0},
           {name:"man_of_the_match",label:"Man of the Match",type:"number",value:p.man_of_the_match||0,min:0},
-          {name:"bio",label:"Short bio",value:p.bio||""}
-        ],async d=>{const {error}=await client.from("dcl_players").update({player_name:d.player_name.trim(),team_id:d.team_id,jersey_number:d.jersey_number===""?null:Number(d.jersey_number),position:d.position||null,appearances:Number(d.appearances||0),assists:Number(d.assists||0),man_of_the_match:Number(d.man_of_the_match||0),bio:d.bio.trim()||null}).eq("id",p.id);if(error)throw error;await loadPlayers();});
+          {name:"bio",label:"Short bio",value:p.bio||""},{name:"photo_file",label:"Upload / change player photo",type:"file",value:p.photo_url||""}
+        ],async d=>{const file=$("#dialogFields input[name=photo_file]").files[0];const photo_url=file?await uploadPlayerPhoto(file,`players/${p.id}`):p.photo_url||null;const {error}=await client.from("dcl_players").update({player_name:d.player_name.trim(),team_id:d.team_id,jersey_number:d.jersey_number===""?null:Number(d.jersey_number),position:d.position||null,appearances:Number(d.appearances||0),assists:Number(d.assists||0),man_of_the_match:Number(d.man_of_the_match||0),bio:d.bio.trim()||null,photo_url}).eq("id",p.id);if(error)throw error;await loadPlayers();});
       }catch(err){toast(err.message);}
     }
     const deletePlayerBtn=e.target.closest("[data-delete-player]");
@@ -350,7 +360,7 @@
         const existing=await safeQuery("dcl_players");
         const jerseySet=new Set(existing.filter(p=>String(p.team_id)===String(s.team_id)&&p.jersey_number!==null).map(p=>String(p.jersey_number)));
         for(const p of roster){if(p.jersey_number!==null&&p.jersey_number!==""&&jerseySet.has(String(p.jersey_number)))throw new Error("Duplicate jersey number #"+p.jersey_number+" already exists in this team.");}
-        const rows=roster.map(p=>({team_id:s.team_id,player_name:String(p.player_name).trim(),jersey_number:p.jersey_number===""?null:(p.jersey_number==null?null:Number(p.jersey_number)),position:p.position||null,appearances:0,assists:0,man_of_the_match:0,bio:null}));
+        const rows=roster.map(p=>({team_id:s.team_id,player_name:String(p.player_name).trim(),jersey_number:p.jersey_number===""?null:(p.jersey_number==null?null:Number(p.jersey_number)),position:p.position||null,appearances:0,assists:0,man_of_the_match:0,bio:null,photo_url:p.photo_url||null}));
         const {error:insertError}=await client.from("dcl_players").insert(rows);if(insertError)throw insertError;
         const {error:updateError}=await client.from("dcl_player_submissions").update({status:"approved",reviewed_at:new Date().toISOString(),reviewed_by:currentUser.id}).eq("id",s.id);if(updateError)throw updateError;
         toast("Players approved and published.");await Promise.all([loadPlayerSubmissions(),loadPlayers()]);
@@ -373,7 +383,7 @@
   }
   $("#awardForm").addEventListener("submit",async e=>{e.preventDefault();try{const {error}=await client.from("dcl_awards").insert({award_name:$("#awardTitle").value.trim(),recipient_name:$("#awardWinner").value.trim(),description:$("#awardDetails").value.trim()||null});if(error)throw error;e.target.reset();setMessage($("#awardMessage"),"Award published.");loadContent();}catch(err){setMessage($("#awardMessage"),err.message,true);}});
   $("#newsForm").addEventListener("submit",async e=>{e.preventDefault();try{const {error}=await client.from("dcl_news").insert({title:$("#newsTitle").value.trim(),body:$("#newsBody").value.trim(),is_published:true});if(error)throw error;e.target.reset();setMessage($("#newsMessage"),"News published.");loadContent();}catch(err){setMessage($("#newsMessage"),err.message,true);}});
-  async function loadPlayers(){try{const [ps,ts]=await Promise.all([safeQuery("dcl_players"),safeQuery("dcl_teams")]);$("#playerTeam").innerHTML=ts.map(t=>`<option value="${t.id}">${escapeHtml(teamDisplayName(t))}</option>`).join("");$("#playersList").innerHTML=ps.map(p=>`<div class="event-list-item"><b>${escapeHtml(p.player_name)}</b> — ${escapeHtml(teamName(p.team_id))} ${p.jersey_number!=null?"#"+p.jersey_number:""} · ${escapeHtml(p.position||"Player")} · Apps ${p.appearances||0} · Assists ${p.assists||0} · MOTM ${p.man_of_the_match||0}<div class="table-actions" style="margin-top:8px"><button class="mini-btn" data-edit-player="${escapeHtml(p.id)}">Edit details</button><button class="mini-btn danger" data-delete-player="${escapeHtml(p.id)}">Delete</button></div></div>`).join("")||'<div class="empty">No players added yet.</div>';}catch(e){$("#playersList").innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`;}}
+  async function loadPlayers(){try{const [ps,ts]=await Promise.all([safeQuery("dcl_players"),safeQuery("dcl_teams")]);$("#playerTeam").innerHTML=ts.map(t=>`<option value="${t.id}">${escapeHtml(teamDisplayName(t))}</option>`).join("");$("#playersList").innerHTML=ps.map(p=>`<div class="event-list-item" style="display:flex;align-items:center;gap:10px">${p.photo_url?`<img src="${escapeHtml(p.photo_url)}" style="width:46px;height:46px;object-fit:cover;border-radius:50%">`:`<span style="width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#203650">⚽</span>`}<div><b>${escapeHtml(p.player_name)}</b> — ${escapeHtml(teamName(p.team_id))} ${p.jersey_number!=null?"#"+p.jersey_number:""} · ${escapeHtml(p.position||"Player")} · Apps ${p.appearances||0} · Assists ${p.assists||0} · MOTM ${p.man_of_the_match||0}<div class="table-actions" style="margin-top:8px"><button class="mini-btn" data-edit-player="${escapeHtml(p.id)}">Edit details</button><button class="mini-btn danger" data-delete-player="${escapeHtml(p.id)}">Delete</button></div></div></div>`).join("")||'<div class="empty">No players added yet.</div>';}catch(e){$("#playersList").innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`;}}
   $("#playerForm").addEventListener("submit",async e=>{e.preventDefault();try{const {error}=await client.from("dcl_players").insert({player_name:$("#playerName").value.trim(),team_id:$("#playerTeam").value,jersey_number:$("#playerNumber").value===""?null:Number($("#playerNumber").value),position:$("#playerPosition").value||null,appearances:Number($("#playerAppearances").value||0),assists:Number($("#playerAssists").value||0),man_of_match:Number($("#playerMotm").value||0),bio:$("#playerBio").value.trim()||null});if(error)throw error;e.target.reset();$("#playerAppearances").value="0";$("#playerAssists").value="0";$("#playerMotm").value="0";setMessage($("#playerMessage"),"Player saved.");await loadPlayers();}catch(err){setMessage($("#playerMessage"),err.message,true);}});
   async function loadGallery(){try{const gs=await safeQuery("dcl_gallery");$("#galleryList").innerHTML=gs.map(g=>`<p class="event-list-item"><b>${escapeHtml(g.title||"Gallery item")}</b> — ${escapeHtml(g.media_type)} · ${g.is_published?"Published":"Hidden"}</p>`).join("")||'<div class="empty">No gallery items yet.</div>';}catch(e){$("#galleryList").innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`;}}
   $("#galleryForm").addEventListener("submit",async e=>{e.preventDefault();try{const {error}=await client.from("dcl_gallery").insert({title:$("#galleryTitle").value.trim()||null,media_url:$("#galleryUrl").value.trim(),media_type:$("#galleryType").value,is_published:$("#galleryPublish").value==="true"});if(error)throw error;e.target.reset();setMessage($("#galleryMessage"),"Gallery item saved.");await loadGallery();}catch(err){setMessage($("#galleryMessage"),err.message,true);}});
