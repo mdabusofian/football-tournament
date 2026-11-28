@@ -155,7 +155,7 @@
     }
   };
   let lang = localStorage.getItem("dcl-admin-lang") || "en";
-  let client = null, currentUser = null, teams = [], matches = [], applications = [], selectedMatch = null;
+  let client = null, currentUser = null, teams = [], matches = [], applications = [], playerSubmissions = [], selectedMatch = null;
 
   function tr(key){ return (translations[lang] && translations[lang][key]) || translations.en[key] || key; }
   function applyLanguage(){
@@ -240,6 +240,26 @@
   function teamDisplayName(t){return t?.name_en||t?.name_bn||"Unnamed team";}
   function teamName(id){const t=teams.find(x=>String(x.id)===String(id));return t?teamDisplayName(t):"TBD";}
   function statusTag(s){const st=s||"pending";return `<span class="tag ${escapeHtml(st)}">${escapeHtml(st.replace("_"," "))}</span>`;}
+  async function loadPlayerSubmissions(){
+    const el=$("#playerSubmissionsList");
+    if(!el || !client || !currentUser) return;
+    el.innerHTML='<div class="empty">Loading player submissions…</div>';
+    try{
+      const {data,error}=await client.from("dcl_player_submissions").select("*").order("created_at",{ascending:false});
+      if(error) throw error;
+      playerSubmissions=data||[];
+      const pending=playerSubmissions.filter(x=>(x.status||"pending")==="pending").length;
+      const badge=$("#playerSubmissionBadge"); if(badge) badge.textContent=pending;
+      if(!playerSubmissions.length){el.innerHTML='<div class="empty">No player submissions received yet.</div>';return;}
+      el.innerHTML=playerSubmissions.map(s=>{
+        const team=teams.find(t=>String(t.id)===String(s.team_id));
+        const roster=Array.isArray(s.players)?s.players:[];
+        const names=roster.map(p=>`<li>${escapeHtml(p.player_name||"—")} ${p.jersey_number!==null&&p.jersey_number!==""?`<small>#${escapeHtml(p.jersey_number)}</small>`:""} <small>· ${escapeHtml(p.position||"Position not selected")}</small></li>`).join("");
+        const pending=(s.status||"pending")==="pending";
+        return `<article class="event-list-item" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><b>${escapeHtml(team?teamDisplayName(team):"Unknown team")}</b>${statusTag(s.status)}</div><p style="margin:8px 0">Captain: <b>${escapeHtml(s.captain_name||"—")}</b> · Phone: ${escapeHtml(s.phone||"—")}</p><p class="muted" style="margin:4px 0">Submitted: ${s.created_at?new Date(s.created_at).toLocaleString():"—"}</p><ol style="line-height:1.8;padding-left:22px">${names}</ol>${s.contact_note?`<p>Note: ${escapeHtml(s.contact_note)}</p>`:""}${pending?`<div class="table-actions"><button class="mini-btn" data-approve-player-submission="${escapeHtml(s.id)}">Approve & publish players</button><button class="mini-btn danger" data-reject-player-submission="${escapeHtml(s.id)}">Reject</button></div>`:""}</article>`;
+      }).join("");
+    }catch(e){el.innerHTML=`<div class="empty">Could not load submissions: ${escapeHtml(e.message)}</div>`;toast(e.message);}
+  }
   function renderTeams(){
     const el=$("#teamsTable");if(!teams.length){el.innerHTML=`<div class="empty">No teams found. Add the first team.</div>`;return;}
     el.innerHTML=`<table><thead><tr><th>Team (English)</th><th>দলের নাম (বাংলা)</th><th>Captain</th><th>Published</th><th>Actions</th></tr></thead><tbody>${teams.map(t=>`<tr><td><b>${escapeHtml(t.name_en||"—")}</b></td><td>${escapeHtml(t.name_bn||"—")}</td><td>${escapeHtml(t.captain_name||"—")}</td><td>${t.is_published?"Yes":"No"}</td><td><div class="table-actions"><button class="mini-btn" data-edit-team="${escapeHtml(t.id)}">Edit</button><button class="mini-btn danger" data-delete-team="${escapeHtml(t.id)}">Delete</button></div></td></tr>`).join("")}</tbody></table>`;
